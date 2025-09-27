@@ -29,10 +29,43 @@ export const generatePromptFromImage = async (imageFile: File): Promise<{ malePr
     throw new Error("API Key chưa được cấu hình. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env");
   }
 
+  // Danh sách các model để thử theo thứ tự ưu tiên
+  const modelsToTry = [
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-001',
+    'gemini-1.5-pro',
+    'gemini-pro-vision'
+  ];
+
+  let lastError: Error | null = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const result = await tryGenerateWithModel(imageFile, model);
+      return result;
+    } catch (error: any) {
+      lastError = error;
+      // Nếu không phải lỗi 404, throw ngay lập tức
+      if (!error.message.includes('404') && !error.message.includes('Model không tìm thấy')) {
+        throw error;
+      }
+      // Nếu là lỗi 404, thử model tiếp theo
+      console.warn(`Model ${model} không khả dụng, thử model tiếp theo...`);
+    }
+  }
+
+  // Nếu tất cả model đều thất bại
+  throw new Error(`Không thể truy cập bất kỳ model Gemini nào. Lỗi cuối cùng: ${lastError?.message || 'Unknown error'}`);
+};
+
+/**
+ * Thử tạo prompt với một model cụ thể
+ */
+const tryGenerateWithModel = async (imageFile: File, model: string): Promise<{ malePrompt: string; femalePrompt: string }> => {
   try {
     const base64Image = await fileToBase64(imageFile);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +103,7 @@ Return the result as a single, valid JSON object with the keys 'malePrompt' and 
       } else if (response.status === 403) {
         throw new Error(`API key không có quyền truy cập vào tính năng này (403). Vui lòng kiểm tra quyền của API key`);
       } else if (response.status === 404) {
-        throw new Error(`Model không tìm thấy (404). Vui lòng kiểm tra: 1) API key có đúng không, 2) Generative Language API đã được bật trong Google Cloud Console chưa, 3) Model gemini-1.5-flash-001 có khả dụng với API key của bạn không.`);
+        throw new Error(`Model ${model} không tìm thấy (404). Vui lòng kiểm tra: 1) API key có đúng không, 2) Generative Language API đã được bật trong Google Cloud Console chưa, 3) Model ${model} có khả dụng với API key của bạn không.`);
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -90,7 +123,7 @@ Return the result as a single, valid JSON object with the keys 'malePrompt' and 
     throw new Error("API không trả về kết quả hợp lệ");
   } catch (error) {
     console.error("Lỗi khi giao tiếp với Gemini API:", error);
-    throw new Error("Không thể tạo prompt từ hình ảnh. Vui lòng kiểm tra API key và thử lại.");
+    throw error;
   }
 };
 
