@@ -32,6 +32,7 @@ export const generatePromptFromImage = async (imageFile: File): Promise<{ malePr
   try {
     const base64Image = await fileToBase64(imageFile);
 
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
