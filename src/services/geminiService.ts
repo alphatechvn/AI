@@ -32,7 +32,6 @@ export const generatePromptFromImage = async (imageFile: File): Promise<{ malePr
   try {
     const base64Image = await fileToBase64(imageFile);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -64,11 +63,13 @@ Return the result as a single, valid JSON object with the keys 'malePrompt' and 
 
     if (!response.ok) {
       if (response.status === 503) {
-        throw new Error(`Dịch vụ Gemini API tạm thời không khả dụng (503). Vui lòng kiểm tra API key của bạn có đúng và có quyền truy cập vào model gemini-1.5-flash không. Thử lại sau vài phút.`);
+        throw new Error(`Dịch vụ Gemini API tạm thời không khả dụng (503). Vui lòng kiểm tra API key của bạn có đúng và có quyền truy cập vào model gemini-1.5-flash-001 không. Thử lại sau vài phút.`);
       } else if (response.status === 401) {
         throw new Error(`API key không hợp lệ hoặc không có quyền truy cập (401). Vui lòng kiểm tra lại VITE_GEMINI_API_KEY trong file .env`);
       } else if (response.status === 403) {
         throw new Error(`API key không có quyền truy cập vào tính năng này (403). Vui lòng kiểm tra quyền của API key`);
+      } else if (response.status === 404) {
+        throw new Error(`Model không tìm thấy (404). Vui lòng kiểm tra: 1) API key có đúng không, 2) Generative Language API đã được bật trong Google Cloud Console chưa, 3) Model gemini-1.5-flash-001 có khả dụng với API key của bạn không.`);
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
