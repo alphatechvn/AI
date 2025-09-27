@@ -97,7 +97,7 @@ Return the result as a single, valid JSON object with the keys 'malePrompt' and 
 
     if (!response.ok) {
       if (response.status === 503) {
-        throw new Error(`Dịch vụ Gemini API tạm thời không khả dụng (503). Vui lòng kiểm tra API key của bạn có đúng và có quyền truy cập vào model gemini-1.5-flash-001 không. Thử lại sau vài phút.`);
+        throw new Error(`Dịch vụ Gemini API tạm thời không khả dụng (503). Vui lòng kiểm tra: 1) API key trong file .env có đúng và đang hoạt động không, 2) Generative Language API đã được bật trong Google Cloud Console chưa, 3) API key có quyền truy cập vào model ${model} không. Nếu tất cả đều đúng, hãy thử lại sau vài phút vì có thể là lỗi tạm thời của dịch vụ.`);
       } else if (response.status === 401) {
         throw new Error(`API key không hợp lệ hoặc không có quyền truy cập (401). Vui lòng kiểm tra lại VITE_GEMINI_API_KEY trong file .env`);
       } else if (response.status === 403) {
