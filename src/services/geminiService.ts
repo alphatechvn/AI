@@ -63,7 +63,15 @@ Return the result as a single, valid JSON object with the keys 'malePrompt' and 
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 503) {
+        throw new Error(`Dịch vụ Gemini API tạm thời không khả dụng (503). Vui lòng kiểm tra API key của bạn có đúng và có quyền truy cập vào model gemini-1.5-flash không. Thử lại sau vài phút.`);
+      } else if (response.status === 401) {
+        throw new Error(`API key không hợp lệ hoặc không có quyền truy cập (401). Vui lòng kiểm tra lại VITE_GEMINI_API_KEY trong file .env`);
+      } else if (response.status === 403) {
+        throw new Error(`API key không có quyền truy cập vào tính năng này (403). Vui lòng kiểm tra quyền của API key`);
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
 
     const data = await response.json();
